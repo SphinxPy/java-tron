@@ -1011,6 +1011,7 @@ public class Manager {
     if (trxCap == null) {
       return false;
     }
+
     validateTapos(trxCap);
     validateCommon(trxCap);
 
@@ -1018,6 +1019,7 @@ public class Manager {
       throw new ContractSizeNotEqualToOneException(
           "act size should be exactly 1, this is extend feature");
     }
+    forkController.hardFork(trxCap);
 
     validateDup(trxCap);
 
@@ -1033,8 +1035,11 @@ public class Manager {
 //    }
 
     DepositImpl deposit = DepositImpl.createRoot(this);
-    Runtime runtime = new Runtime(trace, block, deposit,
-        new ProgramInvokeFactoryImpl());
+    Runtime runtime = new Runtime(trace, block, deposit, new ProgramInvokeFactoryImpl());
+    if (runtime.isCallConstant()) {
+      // Fixme Wrong exception
+      throw new UnsupportVMException("cannot call constant method ");
+    }
     consumeBandwidth(trxCap, runtime.getResult().getRet(), trace);
 
     trace.init();
@@ -1043,6 +1048,7 @@ public class Manager {
 
     transactionStore.put(trxCap.getTransactionId().getBytes(), trxCap);
 
+    // TODO to remove?
     RuntimeException runtimeException = runtime.getResult().getException();
     ReceiptCapsule traceReceipt = trace.getReceipt();
     TransactionInfoCapsule transactionInfo = TransactionInfoCapsule
@@ -1108,13 +1114,11 @@ public class Manager {
       }
       // apply transaction
       try (ISession tmpSeesion = revokingStore.buildSession()) {
-        if (forkController.forkOrNot(trx)) {
-          processTransaction(trx, null);
-//        trx.resetResult();
-          tmpSeesion.merge();
-          // push into block
-          blockCapsule.addTransaction(trx);
-        }
+        processTransaction(trx, null);
+        // trx.resetResult();
+        tmpSeesion.merge();
+        // push into block
+        blockCapsule.addTransaction(trx);
         iterator.remove();
       } catch (ContractExeException e) {
         logger.info("contract not processed during execute");
@@ -1159,7 +1163,7 @@ public class Manager {
 
     logger.info(
         "postponedTrxCount[" + postponedTrxCount + "],TrxLeft[" + pendingTransactions.size()
-            + "]");
+            + "],RePush[" + repushTransactions.size() + "]");
     blockCapsule.setMerkleRoot();
     blockCapsule.sign(privateKey);
     blockCapsule.generatedByMyself = true;

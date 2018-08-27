@@ -283,6 +283,7 @@ public class NodeImpl extends PeerConnectionDelegate implements Node {
   public void onMessage(PeerConnection peer, TronMessage msg) {
     switch (msg.getType()) {
       case BLOCK:
+        logger.info("stress test: on message block");
         onHandleBlockMessage(peer, (BlockMessage) msg);
         break;
       case TRX:
@@ -702,6 +703,7 @@ public class NodeImpl extends PeerConnectionDelegate implements Node {
   }
 
   private void onHandleBlockMessage(PeerConnection peer, BlockMessage blkMsg) {
+    logger.info("stress test: on handle block message");
     Map<Item, Long> advObjWeRequested = peer.getAdvObjWeRequested();
     Map<BlockId, Long> syncBlockRequested = peer.getSyncBlockRequested();
     BlockId blockId = blkMsg.getBlockId();
@@ -744,6 +746,7 @@ public class NodeImpl extends PeerConnectionDelegate implements Node {
   }
 
   private void processAdvBlock(PeerConnection peer, BlockCapsule block) {
+    logger.info("stress test: process adv block");
     //TODO: lack the complete flow.
     if (!freshBlockId.contains(block.getBlockId())) {
       try {
@@ -855,8 +858,7 @@ public class NodeImpl extends PeerConnectionDelegate implements Node {
             peer.getNode().getHost());
         return;
       }
-      if (del.forkOrNot(trxMsg.getTransactionCapsule())
-          && del.handleTransaction(trxMsg.getTransactionCapsule())) {
+      if (del.handleTransaction(trxMsg.getTransactionCapsule())) {
         broadcast(trxMsg);
       }
     } catch (TraitorPeerException e) {
