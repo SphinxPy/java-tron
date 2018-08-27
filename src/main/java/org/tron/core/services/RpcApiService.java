@@ -1311,7 +1311,9 @@ public class RpcApiService implements Service {
         Transaction trx = wallet.triggerContract(request, trxCap, trxExtBuilder, retBuilder);
         trxExtBuilder.setTransaction(trx);
         trxExtBuilder.setTxid(trxCap.getTransactionId().getByteString());
+
         retBuilder.setResult(true).setCode(response_code.SUCCESS);
+        trxExtBuilder.setResult(retBuilder);
       } catch (ContractValidateException e) {
         retBuilder.setResult(false).setCode(response_code.CONTRACT_VALIDATE_ERROR)
             .setMessage(ByteString.copyFromUtf8("contract validate error : " + e.getMessage()));
